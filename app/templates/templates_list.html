@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Email Templates{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4">Email Templates</h3>
+
+<!-- Add Template Buttons Row -->
+<div class="row mb-4">
+    <div class="col-auto">
+        <a href="/templates" class="btn btn-primary">
+            + Create New Template
+        </a>
+    </div>
+    <div class="col-auto">
+        <a href="/external_template" class="btn btn-secondary">
+            Save External Template
+        </a>
+    </div>
+    </div>
+
+
+    <!-- Template Cards -->
+    <div class="row">
+        {% for template in templates %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <strong>{{ template.name }}</strong>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box">
+                        
+                        <div class="preview-popup">
+                            {{ template.final_html|safe }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="" class="btn btn-sm btn-warning">
+                        Edit
+                    </a>
+                    <form method="POST" action="/delete_template/{{ template.id }}" style="display:inline;"
+                        onsubmit="return confirm('Delete this template?');">
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Hover preview inside card */
+    .preview-box {
+        position: relative;
+        display: block;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .preview-popup {
+        display: none;
+        position: absolute;
+        top: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        width: 320px;
+        height: 420px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .preview-box:hover .preview-popup {
+        display: block;
+    }
+
+    /* Fade animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .preview-popup {
+            width: 90vw;
+            height: 60vh;
+        }
+    }
+</style>
+{% endblock %}

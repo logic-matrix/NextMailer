@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Advanced Dynamic Template{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Email Template Builder</h2>
+
+    <div class="row">
+        <!-- Form Column -->
+        <div class="col-md-6">
+            <form method="POST" id="templateForm" action="{{ url_for('main.builder') }}">
+                <!-- Template Name -->
+                <div class="mb-3">
+                    <label class="form-label">Template Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+
+                <!-- Title -->
+                <div class="mb-3">
+                    <label class="form-label">Email Title</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+
+                <!-- Title Color & Alignment -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Title Color</label>
+                        <input type="color" id="titleColor" class="form-control form-control-color" value="#000000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Title Alignment</label>
+                        <select id="titleAlign" class="form-select">
+                            <option value="left">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Image -->
+                <div class="mb-3">
+                    <label class="form-label">Header Image URL</label>
+                    <input type="url" id="image" class="form-control">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Image Width (%)</label>
+                        <input type="range" id="imageWidth" min="10" max="100" value="100" class="form-range">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Image Alignment</label>
+                        <select id="imageAlign" class="form-select">
+                            <option value="left">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Body Content -->
+                <div class="mb-3">
+                    <label class="form-label">Email Body</label>
+                    <textarea id="content" class="form-control" rows="6"></textarea>
+                </div>
+
+                <!-- Body Styling -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Text Color</label>
+                        <input type="color" id="bodyColor" class="form-control form-control-color" value="#000000">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Font Size (px)</label>
+                        <input type="number" id="bodyFontSize" class="form-control" value="16" min="10" max="50">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Text Alignment</label>
+                        <select id="bodyAlign" class="form-select">
+                            <option value="left" selected>Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                            <option value="justify">Justify</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Background Options -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Background Color</label>
+                        <input type="color" id="bgColor" class="form-control form-control-color" value="#f8f9fa">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Background Image URL</label>
+                        <input type="url" id="bgImage" class="form-control">
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="mb-3">
+                    <label class="form-label">Footer Text</label>
+                    <input type="text" id="footerText" class="form-control" placeholder="Enter footer text">
+                </div>
+
+                <!-- Hidden field for full HTML -->
+                <input type="hidden" name="final_html" id="finalHtml">
+                <button type="submit" class="btn btn-success w-100">💾 Save Template</button>
+            </form>
+        </div>
+
+        <!-- Preview Column -->
+        <div class="col-md-6">
+            <h4>Live Preview</h4>
+            <div class="p-3" id="previewArea" style="border-radius:10px; overflow:hidden;">
+                <div id="previewContainer" style="border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                    <h2 id="previewTitle"></h2>
+                    <div id="previewImageWrapper" class="text-center">
+                        <img src="" alt="Header Image" class="img-fluid mb-3 d-none" id="previewImage">
+                    </div>
+                    <p id="previewContent"></p>
+                    <footer id="previewFooter" class="mt-4 text-center" style="font-size:14px; color:#555;"></footer>
+                    </div>
+            </div>
+            </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const titleInput = document.getElementById("title");
+        const titleColor = document.getElementById("titleColor");
+        const titleAlign = document.getElementById("titleAlign");
+        const imageInput = document.getElementById("image");
+        const imageWidth = document.getElementById("imageWidth");
+        const imageAlign = document.getElementById("imageAlign");
+        const contentInput = document.getElementById("content");
+        const bodyColor = document.getElementById("bodyColor");
+        const bodyFontSize = document.getElementById("bodyFontSize");
+        const bodyAlign = document.getElementById("bodyAlign");
+        const bgColor = document.getElementById("bgColor");
+        const bgImage = document.getElementById("bgImage");
+        const footerText = document.getElementById("footerText");
+        const finalHtmlField = document.getElementById("finalHtml");
+
+        const previewTitle = document.getElementById("previewTitle");
+        const previewImage = document.getElementById("previewImage");
+        const previewImageWrapper = document.getElementById("previewImageWrapper");
+        const previewContent = document.getElementById("previewContent");
+        const previewFooter = document.getElementById("previewFooter");
+        const previewContainer = document.getElementById("previewContainer");
+
+        function updatePreview() {
+            previewTitle.textContent = titleInput.value;
+            previewTitle.style.color = titleColor.value;
+            previewTitle.style.textAlign = titleAlign.value;
+
+            if (imageInput.value) {
+                previewImage.src = imageInput.value;
+                previewImage.style.width = imageWidth.value + "%";
+                previewImageWrapper.style.textAlign = imageAlign.value;
+                previewImage.classList.remove("d-none");
+            } else {
+                previewImage.classList.add("d-none");
+            }
+
+            previewContent.textContent = contentInput.value;
+            previewContent.style.color = bodyColor.value;
+            previewContent.style.fontSize = bodyFontSize.value + "px";
+            previewContent.style.textAlign = bodyAlign.value;
+
+            previewFooter.textContent = footerText.value;
+
+            let bgStyle = `background-color:${bgColor.value};`;
+            if (bgImage.value) {
+                bgStyle += ` background-image:url('${bgImage.value}'); background-size:cover; background-repeat:no-repeat; background-position:center;`;
+            }
+            previewContainer.style = `border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); ${bgStyle}`;
+
+            const htmlOutput = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${titleInput.value}</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin:0; padding:0; ${bgStyle}">
+<div style="border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); max-width:600px; margin:20px auto;">
+<h2 style="color:${titleColor.value}; text-align:${titleAlign.value}; font-family: 'Helvetica', Arial, sans-serif;">${titleInput.value}</h2>
+${imageInput.value ? `<div style="text-align:${imageAlign.value};">
+<img src="${imageInput.value}" style="width:${imageWidth.value}%;" alt="Header Image">
+</div>` : ""}
+<p style="color:${bodyColor.value}; font-size:${bodyFontSize.value}px; text-align:${bodyAlign.value}; line-height:1.6;">
+${contentInput.value}
+</p>
+<footer style="text-align:center; font-size:14px; color:#555;">${footerText.value}</footer>
+</div>
+</body>
+</html>
+        `;
+            finalHtmlField.value = htmlOutput.trim();
+        }
+
+        [titleInput, titleColor, titleAlign, imageInput, imageWidth, imageAlign,
+            contentInput, bodyColor, bodyFontSize, bodyAlign, bgColor, bgImage, footerText]
+            .forEach(el => el.addEventListener("input", updatePreview));
+
+        updatePreview();
+    });
+</script>
+{% endblock %}
