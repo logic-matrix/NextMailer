@@ -261,11 +261,11 @@ def delete_user(user_id):
         db.session.delete(user)
         db.session.commit()
         flash("User deleted successfully!", "success")
-        return redirect("settings")
+        return redirect(url_for("main.settings"))
 
     else:
         flash("User not found!", "error")
-        return redirect("settings")
+        return redirect(url_for("main.settings"))
 #####################################################################################
 @main.route("/delete_service/<int:service_id>", methods=["POST"])
 def delete_service(service_id): 
@@ -274,11 +274,11 @@ def delete_service(service_id):
         db.session.delete(service)
         db.session.commit()
         flash("Service deleted successfully!", "success")
-        return redirect(url_for("settings"))
+        return redirect(url_for("main.settings"))
 
     else:
         flash("Service not found!", "error")
-        return redirect(url_for("settings"))
+        return redirect(url_for("main.settings"))
 
 #####################################################################################
 @main.route("/add_service", methods=["POST"])

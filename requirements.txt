@@ -4,11 +4,16 @@ Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
 Flask-WTF==1.2.1
 gunicorn==23.0.0
-jinja2  # for deployment
-Flask-Mailpip
-psycopg-binary
-flask-sqlalchemy
-python-dotenv
-flask-login
-Flask-Mail
-flask-migrate
+Jinja2==3.1.4   # for deployment
+
+# ⚠️ Not valid on PyPI, use Flask-Mail instead
+#Flask-Mailpip   # should be Flask-Mail==0.9.1
+
+# ⚠️ Not valid on PyPI, use psycopg2-binary instead
+#psycopg-binary  # should be psycopg2-binary==2.9.9
+
+flask-sqlalchemy==3.1.1   # duplicate of Flask-SQLAlchemy
+python-dotenv==1.0.1      # duplicate
+flask-login==0.6.3
+Flask-Mail==0.9.1
+flask-migrate==4.0.5      # duplicate of Flask-Migrate
