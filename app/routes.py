@@ -42,9 +42,13 @@ def configure_mail(app):
         MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER
     )
     mail.init_app(app)
-
 #######################################################################
 @main.route("/", methods=["GET", "POST"])
+def landing_page():
+    return render_template("landing.html")
+
+#######################################################################
+@main.route("/login", methods=["GET", "POST"])
 def index():
     return render_template("index.html")
 
@@ -55,7 +59,7 @@ def home_route():
     return home()
  
 ########################################################################
-@main.route("/login", methods=["GET", "POST"])
+@main.route("/login_01", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         email = request.form.get("email")
