@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}AI Templates{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Left Side: Input -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">✍️ Enter Your Prompt</h5>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <textarea name="prompt" rows="6" class="form-control"
+                                placeholder="Write your email content idea here...">{{ user_prompt if user_prompt else "" }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            🚀 Generate Template
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Preview -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">📧 Email Template Preview</h5>
+
+                    {% if user_prompt %}
+                    <div class="p-4 border rounded bg-light">
+                        <h2 style="color:#007bff;">Hello,</h2>
+                        <p style="font-size: 1.1rem;">{{ user_prompt }}</p>
+                        <p class="mt-4">Best regards,<br>
+                            <strong>AI Templates Bot</strong>
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No prompt yet. Enter something on the left!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
