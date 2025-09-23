@@ -406,8 +406,14 @@ def external_template():
         return redirect(url_for("main.templates"))  # use url_for for safety
     else:
         return render_template("save_external_template.html")
-
+#############################################################################
+@main.route("/ai_templates", methods=["GET", "POST"])
+def ai_templates():
+    user_prompt = None
+    if request.method == "POST":
+        user_prompt = request.form.get("prompt")
     
+    return render_template("template_ai.html", user_prompt=user_prompt)
  
 ############################################################################
 @main.route("/forms", methods=["GET"])
