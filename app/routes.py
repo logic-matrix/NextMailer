@@ -185,13 +185,11 @@ def start_campaign():
     template_name = request.form.get("template")
     schedule = request.form.get("schedule")
 
-    print("Starting campaign with the following details:")
-    print(campaign_name, subject, recipient_list, template_name, schedule)
+    #print("Starting campaign with the following details:")
+    #print(campaign_name, subject, recipient_list, template_name, schedule)
 
     # Fetch template
     template = Template.query.filter_by(name=template_name).first()
-    print("Fetched template:")
-    print(template)
     if not template:
         flash("Selected template not found!", "error")
         return redirect(url_for("main.campaigns"))
@@ -206,20 +204,32 @@ def start_campaign():
     # Configure mail dynamically from .env
     configure_mail(current_app)
 
-    # Build the email
-    msg = Message(
-        subject=subject,
-        recipients=emails,
-        html=template.final_html
+    success_count = 0
+    fail_count = 0
+
+     
+    for email in emails:
+        msg = Message(
+            subject=subject,
+            recipients=[email],   
+            html=template.final_html
+        )
+
+        try:
+            mail.send(msg)
+            success_count += 1
+            print(f"Email sent to: {email}")
+        except Exception as e:
+            fail_count += 1
+            print(f"Failed to send to {email}: {str(e)}")
+
+    flash(
+        f"Campaign '{campaign_name}' completed. Sent: {success_count}, Failed: {fail_count}",
+        "success" if fail_count == 0 else "warning"
     )
 
-    try:
-        mail.send(msg)
-        flash(f"Campaign '{campaign_name}' sent successfully!", "success")
-    except Exception as e:
-        flash(f"Error sending email: {str(e)}", "danger")
-
     return redirect(url_for("main.campaigns"))
+
 
 ##########################################################################
 @main.route("/send_email", methods=["GET", "POST"])
