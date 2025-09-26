@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Email & Campaign{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-auto">
+            <a href="/campaigns" class="btn btn-warning">
+                + Email Campaign
+            </a>
+        </div>
+ 
+    
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Send SMS</h4>
+                    <div>
+                        <!-- Toggle Buttons -->
+                        <button id="regularSmsBtn" class="btn btn-light btn-sm me-2 active">Regular SMS</button>
+                        <button id="campaignSmsBtn" class="btn btn-light btn-sm">SMS Campaign</button>
+                    </div>
+                </div>
+
+                <div class="card-body bg-light">
+                    <!-- Regular SMS Form -->
+                    <form id="regularSmsForm" action="/send_sms" method="POST">
+                        <h5 class="mb-3 text-dark">Regular SMS</h5>
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
+                                placeholder="Enter recipient phone number" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="smsMessage" class="form-label">Message</label>
+                            <textarea class="form-control" id="smsMessage" name="smsMessage" rows="4"
+                                placeholder="Enter your message here..." required></textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success px-5">Send SMS</button>
+                        </div>
+                    </form>
+
+                    <!-- SMS Campaign Form -->
+                    <form id="campaignSmsForm" action="/start_sms_campaign" method="POST" style="display: none;">
+                        <h5 class="mb-3 text-dark">SMS Campaign</h5>
+                        <div class="mb-3">
+                            <label for="smsCampaignName" class="form-label">Campaign Name</label>
+                            <input type="text" class="form-control" id="smsCampaignName" name="smsCampaignName"
+                                placeholder="Enter campaign name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">Upload CSV File</label>
+                            <input type="file" class="form-control" id="csvFile" name="csvFile" accept=".csv" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="campaignSmsMessage" class="form-label">Message</label>
+                            <textarea class="form-control" id="campaignSmsMessage" name="campaignSmsMessage" rows="4"
+                                placeholder="Enter your campaign message here..." required></textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success px-5">Start SMS Campaign</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

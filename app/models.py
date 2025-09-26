@@ -38,3 +38,9 @@ class Template(db.Model):
     name = db.Column(db.String(80), nullable=True)
     final_html = db.Column(db.String(80), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+class Uploads(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(120), nullable=False)
+    filepath = db.Column(db.String(255), nullable=False)
+    uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
