@@ -243,7 +243,11 @@ def send_email():
         flash(f"Error sending email: {str(e)}", "danger")
 
     return redirect(url_for("main.campaigns"))
-
+####################################################################################
+@main.route("/sms_campaigns", methods=["GET", "POST"])
+#@login_required
+def sms_campaigns():
+    return render_template("sms_campaign.html")
 ####################################################################################
 @main.route("/about")
 def about():
@@ -422,3 +426,6 @@ def forms():
     return render_template("forms.html")
 
 ############################################################################
+@main.route("/uploads", methods=["GET"])
+def uploads():
+    return render_template("uploads.html")
