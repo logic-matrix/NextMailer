@@ -12,7 +12,7 @@ services:
       - .env
     # Persist SQLite DB 
     volumes:
-      - ./instance:/app/app/instance
+      - app_instance:/app/app/instance
       - ./migrations:/app/migrations
     ports:
       - "8030:8000"
@@ -23,3 +23,5 @@ services:
     # (B) Flask dev server (simple/dev) — works even if you don’t expose `app`
     command: sh -c "python -m flask --app run run --host=0.0.0.0 --port=8000"
     restart: unless-stopped
+volumes:
+  app_instance:
