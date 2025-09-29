@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, flash, jsonify, redirect, render_templ
 from werkzeug.security import generate_password_hash
 from app.controllers.main_controller import home
 from app.controllers.settings_controller import service_settings
+from app.controllers.upload_image import save_image
 from .models import Customer, Service, Template, User
 from .extensions import db, mail
 from werkzeug.security import check_password_hash
@@ -436,6 +437,12 @@ def forms():
     return render_template("forms.html")
 
 ############################################################################
-@main.route("/uploads", methods=["GET"])
-def uploads():
+@main.route("/uploads", methods=["GET", "POST"])
+def upload():
+    if request.method == "POST":
+        file = request.files.get("file")
+        upload = save_image(file)
+        if upload:
+            return f"Uploaded! Path: {upload.filepath}"
+        return "Upload failed"
     return render_template("uploads.html")
