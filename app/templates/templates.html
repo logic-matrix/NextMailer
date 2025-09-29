@@ -4,6 +4,24 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="text-center mb-4">Email Template Builder</h2>
+            
+            <div class="row mb-4">
+                <div class="col-auto">
+                    <a href="/templates" class="btn btn-secondary">
+                        + Create New Template
+                    </a>
+                </div>
+                <div class="col-auto">
+                    <a href="/external_template" class="btn btn-secondary">
+                        Save External Template
+                    </a>
+                </div>
+                <div class="col-auto">
+                    <a href="/ai_templates" class="btn btn-secondary">
+                        AI Assistant
+                    </a>
+                </div>
+            </div>
 
     <div class="row">
         <!-- Form Column -->
@@ -37,10 +55,15 @@
                     </div>
                 </div>
 
-                <!-- Image -->
+                <!-- Image Dropdown -->
                 <div class="mb-3">
-                    <label class="form-label">Header Image URL</label>
-                    <input type="url" id="image" class="form-control">
+                    <label class="form-label">Header Image</label>
+                    <select id="image" name="image" class="form-control">
+                        <option value="">Select a Image</option>
+                        {% for img in images %}
+                        <option value="{{ img.filepath }}">{{ img.filename }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="row mb-3">
