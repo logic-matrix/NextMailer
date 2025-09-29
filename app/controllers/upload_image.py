@@ -1,13 +1,15 @@
 import os
 from werkzeug.utils import secure_filename
+from flask import url_for
 from app.models import Uploads  
 from app.extensions import db
 
 UPLOAD_FOLDER = "app/static/images"
 
-def save_image(file):
+def save_image(file, name):
     if file:
-        filename = secure_filename(file.filename)
+
+        filename = name if name else secure_filename(file.filename)
         filepath = os.path.join(UPLOAD_FOLDER, filename)
 
         if not os.path.exists(UPLOAD_FOLDER):
@@ -15,7 +17,10 @@ def save_image(file):
 
         file.save(filepath)
 
-        upload = Uploads(filename=filename, filepath=filepath)
+        # Build URL accessible from browser
+        file_url = url_for("static", filename=f"images/{filename}", _external=True)
+
+        upload = Uploads(filename=filename, filepath=file_url)
         db.session.add(upload)
         db.session.commit()
 

@@ -6,7 +6,7 @@
 <h2>Uploads</h2>
 
 <!-- Upload Form -->
-<form method="POST" enctype="multipart/form-data" action="">
+<form method="POST" enctype="multipart/form-data" action="/uploads">
     <div class="row mb-3">
         <div class="col-md-6">
             <label for="name" class="form-label">Image Name</label>
@@ -35,7 +35,35 @@
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>
 </div>
-
+<!-- Image list-->
+<h3 class="mt-5">Uploaded Images</h3>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Filepath</th>
+            <th>Uploaded At</th>
+            <th>Image</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for img in images %}
+        <tr>
+            <td>{{ img.id }}</td>
+            <td>{{ img.filename }}</td>
+            <td>{{ img.filepath }}</td>
+            <td>{{ img.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td><img src="{{ img.filepath }}" alt="{{ img.name }}" style="max-width:100px; max-height:100px;"></td>
+            <td>
+                <form method="POST" action="">
+                    <input type="hidden" name="delete_name" value="{{ img.filename }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+        </tr>
+        {% endfor %}
+    </tbody>
 <script>
     function previewImage(event) {
         const preview = document.getElementById('preview');

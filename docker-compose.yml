@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  web:
+    working_dir: /app 
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Use your own image name if you plan to push to a registry
+    # image: nextmailer:web
+    env_file:
+      - .env
+    # Persist SQLite DB 
+    volumes:
+      - ./instance:/app/app/instance
+      - ./migrations:/app/migrations
+    ports:
+      - "8030:8000"
+    # Choose ONE command:
+    # (A) Gunicorn (recommended for prod) — requires your run.py to expose `app`
+    # command: gunicorn -w 3 -b 0.0.0.0:8000 run:app
+    #
+    # (B) Flask dev server (simple/dev) — works even if you don’t expose `app`
+    command: sh -c "python -m flask --app run run --host=0.0.0.0 --port=8000"
+    restart: unless-stopped

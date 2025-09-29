@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash
 from app.controllers.main_controller import home
 from app.controllers.settings_controller import service_settings
 from app.controllers.upload_image import save_image
-from .models import Customer, Service, Template, User
+from .models import Customer, Service, Template, Uploads, User
 from .extensions import db, mail
 from werkzeug.security import check_password_hash
 from flask_login import login_required, current_user
@@ -399,7 +399,8 @@ def builder():
 @main.route("/templates", methods=["GET", "POST"])
 def list_templates():
     templates = Template.query.order_by(Template.created_at.desc()).all()
-    return render_template("templates.html", templates=templates)
+    image = Uploads.query.all()
+    return render_template("templates.html", templates=templates, images=image)
 
 ############################################################################
 @main.route("/external_template", methods=["GET", "POST"])
@@ -440,9 +441,15 @@ def forms():
 @main.route("/uploads", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
+        name = request.form.get("name")
         file = request.files.get("file")
-        upload = save_image(file)
+        if Uploads.query.filter_by(filename=name).first():
+            flash("Image Name is already in use!", "error")
+            return redirect(add_admin)
+        upload = save_image(file, name)
         if upload:
             return f"Uploaded! Path: {upload.filepath}"
-        return "Upload failed"
-    return render_template("uploads.html")
+        return redirect("uploads")
+
+    image = Uploads.query.all()
+    return render_template("uploads.html", images=image)
