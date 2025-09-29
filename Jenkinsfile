@@ -1,0 +1,196 @@
+pipeline {
+    agent any
+    options {
+        skipDefaultCheckout(true)
+        disableConcurrentBuilds()
+    }
+
+  /********************
+   * Environment (mirror params => env so ${VAR} works in sh)
+   ********************/
+  
+  /********************
+   * Parameters
+   ********************/
+  parameters {
+    // Webhook / listening
+    string(name: 'WEBHOOK_TOKEN_ID', defaultValue: 'logicmatrix-api-generic-webhook-token', description: 'Secret Text credential ID for Generic Webhook Trigger')
+    string(name: 'LISTEN_BRANCH', defaultValue: 'dev', description: 'Exact branch name this job should accept (e.g., dev or main)')
+    stringt(name: 'SCM_URL',           defaultValue: 'https://github.com/logic-matrix/NextMailer.git', description: 'Git repo URL')
+    string(name: 'GIT_CREDENTIALS_ID',defaultValue: 'github-https-creds', description: 'Jenkins credentialsId for Git SSH key')
+    
+    // Labels / notifications
+    string(name: 'ENVIRONMENT',   defaultValue: 'test',         description: 'Environment label used in notifications (e.g., test or prod)')
+    string(name: 'TEAM_CHANNEL', defaultValue: '#logicmatrixdev',  description: 'Slack channel for notifications')
+    // Compose
+    string(name: 'COMPOSE_FILE',  defaultValue: 'docker-compose.yml', description: 'Compose file to use')
+    // Secret credential IDs (configure these in Jenkins > Credentials)
+    string(name: 'SECRET_KEY_ID',      defaultValue: 'flask-secret-key',     description: 'Secret Text: Flask SECRET_KEY')
+    string(name: 'SMTP_USER_ID',       defaultValue: 'smtp-user',            description: 'Username/Password: SMTP user/pass')
+    string(name: 'MAIL_SENDER_NAME',   defaultValue: 'LogicMatrix',          description: 'Default sender display name')
+ 
+
+
+  }
+  environment {
+    ENVIRONMENT     = "${params.ENVIRONMENT}"
+    TEAM_CHANNEL    = "${params.SLACK_CHANNEL}"
+
+    APP_NAME        = "${params.APP_NAME}"
+    COMPOSE_FILE    = "${params.COMPOSE_FILE}"
+
+  }
+
+    stages {
+        stage('Configure Triggers') {
+        when { beforeAgent true; expression { true } }
+            steps {
+                script {
+                    def listen = (params.LISTEN_BRANCH ?: '').trim()
+                    if (!listen) error 'LISTEN_BRANCH must be set (e.g., dev or main).'
+                    def quoted = java.util.regex.Pattern.quote(listen)
+                        properties([
+                            pipelineTriggers([
+                            [$class: 'GenericTrigger',
+                                genericVariables: [
+                                [key: 'WEBHOOK_BRANCH', value: '$.push.changes[0].new.name'],
+                                [key: 'ACTOR', value: '$.actor.display_name']
+                                ],
+                                causeString: 'Triggered by $ACTOR on branch $WEBHOOK_BRANCH',
+                                tokenCredentialId: params.WEBHOOK_TOKEN_ID,
+                                printContributedVariables: false,
+                                printPostContent: false,
+                                // Only fire when the pushed branch matches this job's SCM branch
+                                regexpFilterText: '$WEBHOOK_BRANCH',
+                                regexpFilterExpression: '^' + quoted + '$'
+                            ]
+                            ])
+                        ])
+                        echo "Webhook gated to branch: '${listen}'"
+                }
+            }
+        }
+/********************
+* Checkout code
+********************/
+
+    stage('Checkout') {
+        steps {
+            echo "Checking out branch: ${params.LISTEN_BRANCH}"
+             checkout([
+                $class: 'GitSCM',
+                branches: [[name: "*/${params.LISTEN_BRANCH}"]],   // always the listening branch
+                userRemoteConfigs: [[
+                    url: params.SCM_URL, 
+                    credentialsId: params.GIT_CREDENTIALS_ID,
+                    refspec: '+refs/heads/*:refs/remotes/origin/*'
+                ]],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [
+                    [$class: 'WipeWorkspace'],
+                    [$class: 'CloneOption', shallow: true, depth: 1, noTags: false, reference: '', timeout: 15]
+                ],
+                submoduleCfg: []
+            ])
+        }
+    }
+   
+
+    stage('Create .env (from Jenkins credentials)') {
+      steps {
+        dir("${env.REPO_NAME}") {
+          script {
+            // Read secrets safely from Jenkins credentials
+            withCredentials([
+              string(credentialsId: params.SECRET_KEY_ID, variable: 'SECRET_KEY'),
+              usernamePassword(credentialsId: params.SMTP_USER_ID, usernameVariable: 'SMTP_USER', passwordVariable: 'SMTP_PASS')
+            ]) {
+              // Compose auto-loads .env from the working directory.
+              writeFile file: '.env', text: """
+# ===== Generated by Jenkins at ${new Date()} =====
+# Flask settings
+FLASK_APP=app.py
+FLASK_ENV=production
+SECRET_KEY=${SECRET_KEY}
+
+# Server
+HOST=0.0.0.0
+PORT=5000
+DEBUG=True
+
+# Email (SMTP)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_SSL=False
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=${SMTP_USER}
+EMAIL_HOST_PASSWORD=${SMTP_PASS}
+MAIL_DEFAULT_SENDER=\\"${params.MAIL_SENDER_NAME}\\"
+
+# App label
+ENVIRONMENT=${ENVIRONMENT}
+"""
+              sh 'chmod 600 .env'
+            }
+          }
+        }
+      }
+    }
+   stage('Build') {
+      steps {
+        dir("${env.REPO_NAME}") {
+          sh '''
+            docker compose -f "${COMPOSE_FILE}" build
+          '''
+        }
+      }
+    }
+
+        // stage('Test') {
+        //     steps {
+        //         dir("${env.REPO_NAME}") {
+        //           sh '''
+        //             /// scan command
+        //           '''
+        //         }
+        //     }
+        // }
+    stage('Down Container') {
+      steps {
+        dir("${env.REPO_NAME}") {
+          sh '''
+            # Stop & remove old resources (ignore errors if first run)
+            docker compose -f "${COMPOSE_FILE}" down || true
+            docker compose -f "${COMPOSE_FILE}" rm -f || true
+          '''
+        }
+      }
+    }
+        stage('Deploy Container') {
+            steps {
+                dir("${env.REPO_NAME}") {
+                   sh '''
+                    # Compose auto-loads .env; no need to pass --env-file if .env is in this dir
+                    docker compose -f "${COMPOSE_FILE}" up -d
+                    docker compose -f "${COMPOSE_FILE}" ps
+                   '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "🧹 Cleaning up ${env.REPO_NAME}..."
+            dir("${env.REPO_NAME}") {
+                deleteDir()
+            }
+        }
+        success {
+            echo '✅ App deployed successfully.'
+        }
+        failure {
+            echo '❌ Build failed.'
+        }
+    }
+}
