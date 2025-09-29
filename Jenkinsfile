@@ -16,7 +16,7 @@ pipeline {
     // Webhook / listening
     string(name: 'WEBHOOK_TOKEN_ID', defaultValue: 'logicmatrix-api-generic-webhook-token', description: 'Secret Text credential ID for Generic Webhook Trigger')
     string(name: 'LISTEN_BRANCH', defaultValue: 'dev', description: 'Exact branch name this job should accept (e.g., dev or main)')
-    stringt(name: 'SCM_URL',           defaultValue: 'https://github.com/logic-matrix/NextMailer.git', description: 'Git repo URL')
+    string(name: 'SCM_URL',           defaultValue: 'https://github.com/logic-matrix/NextMailer.git', description: 'Git repo URL')
     string(name: 'GIT_CREDENTIALS_ID',defaultValue: 'github-https-creds', description: 'Jenkins credentialsId for Git SSH key')
     
     // Labels / notifications
