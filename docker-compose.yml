@@ -1,4 +1,9 @@
 version: "3.9"
+networks:
+  traefik-proxy-net:
+    name: traefik-proxy-net
+    driver: bridge
+    external: true
 
 services:
   web:
@@ -12,8 +17,11 @@ services:
       - .env
     # Persist SQLite DB 
     volumes:
-      - ./instance:/app/app/instance
+      - app_instance:/app/app/instance
       - ./migrations:/app/migrations
+    networks:
+      - traefik-proxy-net
+
     ports:
       - "8030:8000"
     # Choose ONE command:
@@ -23,3 +31,11 @@ services:
     # (B) Flask dev server (simple/dev) — works even if you don’t expose `app`
     command: sh -c "python -m flask --app run run --host=0.0.0.0 --port=8000"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextmailer.rule=Host(`nextmailer.logicmatrix.us`)"
+      - "traefik.http.routers.nextmailer.entrypoints=web"
+      - "traefik.http.services.nextmailer.loadbalancer.server.port=8000"
+      
+volumes:
+  app_instance:
