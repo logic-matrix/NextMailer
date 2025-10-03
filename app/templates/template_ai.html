@@ -3,7 +3,26 @@
 {% block title %}AI Templates{% endblock %}
 
 {% block content %}
+
 <div class="container py-5">
+    <h3 class="mb-4">AI Templates Create</h3>
+    <div class="row mb-4">
+        <div class="col-auto">
+            <a href="/templates" class="btn btn-secondary">
+                + Create New Template
+            </a>
+        </div>
+        <div class="col-auto">
+            <a href="/external_template" class="btn btn-secondary">
+                Save External Template
+            </a>
+        </div>
+        <div class="col-auto">
+            <a href="/ai_templates" class="btn btn-secondary">
+                AI Assistant
+            </a>
+        </div>
+    </div>
     <div class="row">
 
         <!-- Left Side: Input -->
@@ -47,5 +66,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

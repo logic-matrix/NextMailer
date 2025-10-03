@@ -3,12 +3,11 @@
 {% block content %}
 
 <head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f6f9;
         }
 
@@ -19,14 +18,14 @@
             top: 0;
             left: 0;
             width: 220px;
-            background: #1f2937;
+            background: #111827;
             color: #fff;
             transition: all 0.3s;
             padding-top: 60px;
         }
 
         .sidebar a {
-            color: #fff;
+            color: #cbd5e1;
             text-decoration: none;
             display: block;
             padding: 12px 20px;
@@ -35,43 +34,60 @@
         }
 
         .sidebar a:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
+            color: #fff;
         }
 
         /* Top Navbar */
         .navbar {
             margin-left: 220px;
             transition: all 0.3s;
-            background: #1f2937;
+            background: #111827;
+            padding: 10px 20px;
         }
 
         .navbar-brand {
             font-weight: bold;
             font-size: 1.3rem;
+            color: #fff !important;
         }
 
         /* Main Content */
         .content {
             margin-left: 100px;
-            padding: 20px;
+            padding: 30px;
             transition: all 0.3s;
         }
 
         .card {
             border: none;
-            border-radius: 15px;
+            border-radius: 18px;
             color: #fff;
+            padding: 20px;
+            min-height: 150px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
         }
 
         .card h5 {
-            font-size: 1.2rem;
+            font-size: 1rem;
             margin-bottom: .5rem;
+            opacity: 0.9;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: bold;
         }
 
         .card p {
             font-size: .9rem;
-            opacity: 0.9;
+            opacity: 0.85;
         }
 
         /* Colors for different cards */
@@ -80,7 +96,7 @@
         }
 
         .bg-green {
-            background: linear-gradient(135deg, #209246, #38f9d7);
+            background: linear-gradient(135deg, #06beb6, #48b1bf);
         }
 
         .bg-purple {
@@ -111,13 +127,15 @@
         }
     </style>
 </head>
+
 <!-- Main Content -->
-<div class="content mt-5 pt-3">
+<div class="content mt-4 pt-3">
     <div class="container-fluid">
-        <h2 class="mb-4">Welcome Back, Marketer!</h2>
+        <h2 class="fw-bold mb-4">Dashboard Overview</h2>
         <div class="row g-4">
+
             <div class="col-md-3">
-                <div class="card bg-orange p-3 shadow">
+                <div class="card bg-orange shadow">
                     <h5>Total Templates</h5>
                     <h3>{{ templates }}</h3>
                     <p>+5 this week</p>
@@ -126,7 +144,7 @@
 
             <div class="col-md-3">
                 <a href="/subscribers" style="text-decoration: none;">
-                    <div class="card bg-green p-3 shadow">
+                    <div class="card bg-green shadow">
                         <h5>Subscribers</h5>
                         <h3>{{ customers }}</h3>
                         <p>+230 today</p>
@@ -135,38 +153,49 @@
             </div>
 
             <div class="col-md-3">
-                <div class="card bg-purple p-3 shadow">
+                <div class="card bg-purple shadow">
                     <h5>Open Rate</h5>
                     <h3>67%</h3>
                     <p>Last 30 days</p>
                 </div>
             </div>
+
             <div class="col-md-3">
-                <div class="card bg-pink p-3 shadow">
+                <div class="card bg-pink shadow">
                     <h5>Click Rate</h5>
                     <h3>32%</h3>
                     <p>CTR performance</p>
                 </div>
             </div>
+
             <div class="col-md-3">
-                <div class="card bg-pink p-3 shadow">
+                <div class="card bg-green shadow">
                     <h5>Forms</h5>
                     <h3>32</h3>
                     <p>Active</p>
                 </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-green shadow">
+                    <h5>Images</h5>
+                    <h3>{{images}}</h3>
+                    <p>Active</p>
+                </div>
             </div>
+            
         </div>
     </div>
 </div>
 
 <!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const menuToggle = document.getElementById("menu-toggle");
     const sidebar = document.getElementById("sidebar");
 
-    menuToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("active");
-    });
+                                    if (menuToggle && sidebar) {
+                                    menuToggle.addEventListener("click", () => {
+                                        sidebar.classList.toggle("active");
+                                    });
+                                }
 </script>
 {% endblock %}
