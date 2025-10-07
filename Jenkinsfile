@@ -7,10 +7,6 @@ def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret 
 
 def sendTeamsNotification = { String message, String webhookUrl, String themeColor = '0076D7' ->
     def payload = [
-        '@type'     : 'MessageCard',
-        '@context'  : 'https://schema.org/extensions',
-        'summary'   : 'Jenkins Pipeline Notification',
-        'themeColor': themeColor,
         'title'     : 'Jenkins Pipeline Notification',
         'text'      : message
     ]
