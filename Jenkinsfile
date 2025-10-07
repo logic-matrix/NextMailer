@@ -1,6 +1,7 @@
 
 def LISTEN_BRANCH      = 'feature/test-pipeline'                   // only build when webhook branch == this
-def WEBHOOK_TOKEN_ID   = 'nextmailer-generic-webhook-token-id' // Secret Text credential ID
+def WEBHOOK_TOKEN_ID   = 'nextmailer-generic-webhook-token-id'     // Secret Text credential ID
+def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                    // ID of the file credential for .env
 pipeline {
     agent any
     options {
@@ -32,26 +33,68 @@ pipeline {
   }
 
   stages {
+      
     stage('Checkout') {
-          steps {
-            echo 'Checking out the repository...'
-            checkout scm
-          }
+      steps {
+        echo 'Checking out the repository...'
+        checkout scm
+      }
     }
-
+      
+    stage('Load .env Securely') {
+      steps {
+        script {
+          withCredentials([file(credentialsId: ENV_FILE_CREDENTIAL, variable: 'ENV_FILE')]) {
+            // Copy .env securely into workspace
+            sh 'cp "$ENV_FILE" .env && chmod 600 .env'
+              
+          }
+        }
+      }
+    }
+   stage('Build') {
+      steps {
+        dir("${env.REPO_NAME}") {
+          sh '''
+            docker compose build
+          '''
+        }
+      }
+    }
+    stage('Run') {
+      steps {
+        echo ' running containers...'
+        sh 'docker compose up -d'
+        }
+      }
+    }
+    
   }
+
   post {
     always {
-      echo "🧹 Cleaning up ${env.REPO_NAME}..."
-      dir("${env.REPO_NAME}") {
-        deleteDir()
-      }
+     script {
+            echo "Cleaning up..."
+    
+            // Tear down containers
+            sh 'docker-compose down || true'
+    
+            // Delete sensitive .env file explicitly
+            sh 'rm -f .env || true'
+    
+            // Delete subfolder if defined
+            if (env.REPO_NAME) {
+              dir("${env.REPO_NAME}") {
+                deleteDir()
+              }
+            }
+          }
         }
     success {
-      echo '✅ App deployed successfully.'
+      echo 'Deployed successfully.'
         }
     failure {
-      echo '❌ Build failed.'
+      echo 'Build failed.'
         }
     }
 }
