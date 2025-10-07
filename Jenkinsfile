@@ -21,7 +21,7 @@ pipeline {
         [key: 'REPO',     value: '$.repository.full_name']
       ],
       //  only accept the branch you want
-      regexpFilterText: '$REF',
+      regexpFilterText: '$GH_REF',
       regexpFilterExpression: '^refs/heads/' + java.util.regex.Pattern.quote(LISTEN_BRANCH) + '$',
       // quiet logs
       printContributedVariables: false,
