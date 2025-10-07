@@ -74,10 +74,7 @@ pipeline {
     always {
      script {
             echo "Cleaning up..."
-    
-            // Tear down containers
-            sh 'docker-compose down || true'
-    
+
             // Delete sensitive .env file explicitly
             sh 'rm -f .env || true'
     
@@ -96,5 +93,4 @@ pipeline {
       echo 'Build failed.'
         }
     }
-  }
 }
