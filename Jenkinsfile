@@ -2,7 +2,7 @@
 def LISTEN_BRANCH      = 'feature/test-pipeline'                   // only build when webhook branch == this
 def WEBHOOK_TOKEN_ID   = 'nextmailer-generic-webhook-token-id'     // Secret Text credential ID
 def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                    // ID of the file credential for .env
-def DOMAIN = 'nextmailer.test.logicmatrix.us'
+def DOMAIN = 'nextmailer.logicmatrix.us'
 pipeline {
     agent any
     options {
