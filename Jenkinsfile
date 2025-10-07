@@ -60,7 +60,8 @@ pipeline {
     stage('Notify Start') {
         steps {
             script {
-          sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
+              def message = "🚀 Pipeline STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' started."
+              sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
             }
         }
     }
