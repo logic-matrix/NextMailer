@@ -65,7 +65,6 @@ pipeline {
         script {
           dir("${env.REPO_NAME}") {
             sh """
-              docker compose run --rm web flask db migrate 
               docker compose run --rm web flask db upgrade
             """
           }
