@@ -557,11 +557,11 @@ def send_email01():
         </html>
         """
 
-        # ✅ Send the email safely
+         
         mail.send(msg)
 
         flash("Email sent successfully!", "success")
-        return redirect(url_for("main.landing"))
+        return redirect("/")
 
     except Exception as e:
         print("Error sending email:", e)
