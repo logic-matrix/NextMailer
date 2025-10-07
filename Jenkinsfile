@@ -5,6 +5,23 @@ def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID o
 def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
 def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
 
+def sendTeamsNotification = { String message, String webhookUrl, String themeColor = '0076D7' ->
+    def payload = [
+        '@type'     : 'MessageCard',
+        '@context'  : 'https://schema.org/extensions',
+        'summary'   : 'Jenkins Pipeline Notification',
+        'themeColor': themeColor,
+        'title'     : 'Jenkins Pipeline Notification',
+        'text'      : message
+    ]
+
+    httpRequest(
+        httpMode: 'POST',
+        contentType: 'APPLICATION_JSON',
+        requestBody: groovy.json.JsonOutput.toJson(payload),
+        url: webhookUrl
+    )
+}
 pipeline {
     agent any
     options {
@@ -118,31 +135,4 @@ pipeline {
       }
     }
   }
-
-    //
-    // Function to send a Microsoft Teams notification
-    //
-    script {
-        def sendTeamsNotification = { String message, String webhookUrl, String themeColor = '0076D7' ->
-      def payload = [
-                '@type'     : 'MessageCard',
-                '@context'  : 'https://schema.org/extensions',
-                'summary'   : 'Jenkins Pipeline Notification',
-                'themeColor': themeColor,
-                'title'     : 'Jenkins Pipeline Notification',
-                'text'      : message
-            ]
-
-      httpRequest(
-                httpMode: 'POST',
-                contentType: 'APPLICATION_JSON',
-                requestBody: groovy.json.JsonOutput.toJson(payload),
-                url: webhookUrl
-            )
-        }
-
-        // Expose closure to global scope of the pipeline script
-        // so it can be used from all 'script' blocks
-        this.sendTeamsNotification = sendTeamsNotification
-    }
 }
