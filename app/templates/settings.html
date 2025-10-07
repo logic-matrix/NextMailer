@@ -2,6 +2,15 @@
 {% block title %}Service Settings{% endblock %}
 {% block content %}
 <div class="container mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
     <h3>Service Settings</h3>
 
     <!-- Button-like Cards -->
