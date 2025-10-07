@@ -17,8 +17,8 @@ services:
       - .env
     # Persist SQLite DB 
     volumes:
-      - app_instance:/app/app/instance
-      - migrations_data:/app/migrations
+      - nextmailer_test_appinstance:/app/app/instance
+      - nextmailer_test_migrationdata:/app/migrations
     networks:
       - traefik-proxy-net
     # ports:
@@ -37,5 +37,5 @@ services:
       - "traefik.http.services.nextmailer.loadbalancer.server.port=8000"
       
 volumes:
-  migrations_data:
-  app_instance:
+  nextmailer_test_appinstance:
+  nextmailer_test_migrationdata:
