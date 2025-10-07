@@ -93,4 +93,3 @@ pipeline {
       echo 'Build failed.'
         }
     }
-}
