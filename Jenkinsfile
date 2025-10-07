@@ -9,7 +9,7 @@ pipeline {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
     }
-  enironment {
+  environment {
     DOMAIN = "${DOMAIN}"
   }
   triggers {
