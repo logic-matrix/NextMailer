@@ -1,1 +1,1 @@
-trigger test 6
+trigger test 7
