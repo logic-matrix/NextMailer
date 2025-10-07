@@ -60,6 +60,18 @@ pipeline {
         }
       }
     }
+    stage('DB Migrate & Upgrade') {
+      steps {
+        script {
+          dir("${env.REPO_NAME}") {
+            sh """
+              docker compose run --rm web flask db migrate 
+              docker compose run --rm web flask db upgrade
+            """
+          }
+        }
+      }
+    }
     stage('Run') {
       steps {
         echo 'Running containers...'  
