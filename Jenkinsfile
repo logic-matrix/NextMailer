@@ -5,17 +5,7 @@ def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID o
 def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
 def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
 
-def sendTeamsNotification(String message, String webhookUrl) {
-    def payload = """
-    {
-      "text": "${message}"
-    }
-    """
-    httpRequest httpMode: 'POST',
-                contentType: 'APPLICATION_JSON',
-                requestBody: payload,
-                url: webhookUrl
-}
+
 
 pipeline {
     agent any
@@ -25,6 +15,7 @@ pipeline {
     }
   environment {
     DOMAIN = "${DOMAIN}"
+    TEAMS_WEBHOOK_URL = credentials("${TEAMS_WEBHOOK_CREDID}")
   }
   triggers {
     // Generic Webhook Trigger (requires Generic Webhook Trigger plugin)
@@ -51,6 +42,13 @@ pipeline {
   }
 
   stages {
+    stage('Notify Start') {
+            steps {
+                script {
+                    sendTeamsNotification("Build started")
+                }
+            }
+        }
       
     stage('Checkout') {
       steps {
@@ -110,18 +108,37 @@ pipeline {
     success {
       echo 'Deployed successfully.'
         script {
-            withCredentials([string(credentialsId: TEAMS_WEBHOOK_CREDID, variable: 'TEAMS_WEBHOOK_URL')]) {
-                sendTeamsNotification("✅ Pipeline SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployed successfully. <${env.BUILD_URL}|Open>", TEAMS_WEBHOOK_URL)
-            }
+            def message = "✅ Pipeline SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' completed successfully. [Open Pipeline](${env.BUILD_URL})"
+            sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
           }
         }
     failure {
       echo 'Build failed.'
       script {
-            withCredentials([string(credentialsId: TEAMS_WEBHOOK_CREDID, variable: 'TEAMS_WEBHOOK_URL')]) {
-                sendTeamsNotification("❌ Pipeline FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployment failed. <${env.BUILD_URL}|Open>", TEAMS_WEBHOOK_URL)
-            }    
-          }
+            def message = "❌ Pipeline FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed. [Open Pipeline](${env.BUILD_URL})"
+            sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, 'FF0000') // Red
         }
     }
   }
+
+
+//
+// Function to send a Microsoft Teams notification
+//
+def sendTeamsNotification(String message, String webhookUrl, String themeColor = '0076D7') {
+    def payload = [
+        "@type"     : "MessageCard",
+        "@context"  : "https://schema.org/extensions",
+        "summary"   : "Jenkins Pipeline Notification",
+        "themeColor": themeColor,
+        "title"     : "Jenkins Pipeline Notification",
+        "text"      : message
+    ]
+
+    httpRequest(
+        httpMode: 'POST',
+        contentType: 'APPLICATION_JSON',
+        requestBody: groovy.json.JsonOutput.toJson(payload),
+        url: webhookUrl
+    )
+}
