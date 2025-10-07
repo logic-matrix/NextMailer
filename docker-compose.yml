@@ -21,9 +21,8 @@ services:
       - ./migrations:/app/migrations
     networks:
       - traefik-proxy-net
-
-    ports:
-      - "8030:8000"
+    # ports:
+    #   - "8030:8000"
     # Choose ONE command:
     # (A) Gunicorn (recommended for prod) — requires your run.py to expose `app`
     # command: gunicorn -w 3 -b 0.0.0.0:8000 run:app
