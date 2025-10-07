@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nextmailer.rule=Host(`nextmailer.logicmatrix.us`)"
+      - "traefik.http.routers.nextmailer.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.nextmailer.entrypoints=web"
       - "traefik.http.services.nextmailer.loadbalancer.server.port=8000"
       
