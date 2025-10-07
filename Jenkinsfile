@@ -55,15 +55,14 @@ pipeline {
    stage('Build') {
       steps {
         dir("${env.REPO_NAME}") {
-          sh '''
-            docker compose build
-          '''
+          echo 'Building image...'  
+          sh 'docker compose build'
         }
       }
     }
     stage('Run') {
       steps {
-        echo ' running containers...'
+        echo 'Running containers...'  
         sh 'docker compose up -d'
         }
       }
@@ -97,4 +96,5 @@ pipeline {
       echo 'Build failed.'
         }
     }
+  }
 }
