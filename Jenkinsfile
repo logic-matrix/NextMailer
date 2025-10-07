@@ -5,8 +5,6 @@ def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID o
 def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
 def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
 
-
-
 pipeline {
     agent any
     options {
@@ -43,35 +41,34 @@ pipeline {
 
   stages {
     stage('Notify Start') {
-            steps {
-                script {
-                    sendTeamsNotification("Build started")
-                }
+        steps {
+            script {
+          sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
             }
         }
-      
+    }
+
     stage('Checkout') {
       steps {
         echo 'Checking out the repository...'
         checkout scm
       }
     }
-      
+
     stage('Load .env Securely') {
       steps {
         script {
           withCredentials([file(credentialsId: ENV_FILE_CREDENTIAL, variable: 'ENV_FILE')]) {
             // Copy .env securely into workspace
             sh 'cp "$ENV_FILE" .env && chmod 600 .env'
-              
           }
         }
       }
     }
-   stage('Build') {
+    stage('Build') {
       steps {
         dir("${env.REPO_NAME}") {
-          echo 'Building image...'  
+          echo 'Building image...'
           sh 'docker compose build'
         }
       }
@@ -79,66 +76,73 @@ pipeline {
     stage('DB Migrate & Upgrade') {
       steps {
         script {
-            sh """
-              docker compose run --rm web flask db migrate 
+            sh '''
+              docker compose run --rm web flask db migrate
               docker compose run --rm web flask db upgrade
-            """
+            '''
         }
       }
     }
     stage('Run') {
       steps {
-        echo 'Running containers...'  
+        echo 'Running containers...'
         sh 'docker compose up -d'
-        }
       }
+    }
   }
-    
+
   post {
     always {
-     script {
-            echo "Cleaning up..."
+      script {
+            echo 'Cleaning up...'
 
             // Delete sensitive .env file explicitly
             sh 'rm -f .env || true'
             // Delete subfolder if defined
             deleteDir()
-          }
-        }
+      }
+    }
     success {
       echo 'Deployed successfully.'
         script {
+            echo 'Deployed successfully.'
             def message = "✅ Pipeline SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' completed successfully. [Open Pipeline](${env.BUILD_URL})"
             sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
-          }
         }
+    }
     failure {
-      echo 'Build failed.'
       script {
+            echo 'Build failed.'
             def message = "❌ Pipeline FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed. [Open Pipeline](${env.BUILD_URL})"
             sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, 'FF0000') // Red
-        }
+      }
     }
   }
 
+    //
+    // Function to send a Microsoft Teams notification
+    //
+    script {
+        def sendTeamsNotification = { String message, String webhookUrl, String themeColor = '0076D7' ->
+      def payload = [
+                '@type'     : 'MessageCard',
+                '@context'  : 'https://schema.org/extensions',
+                'summary'   : 'Jenkins Pipeline Notification',
+                'themeColor': themeColor,
+                'title'     : 'Jenkins Pipeline Notification',
+                'text'      : message
+            ]
 
-//
-// Function to send a Microsoft Teams notification
-//
-def sendTeamsNotification(String message, String webhookUrl, String themeColor = '0076D7') {
-    def payload = [
-        "@type"     : "MessageCard",
-        "@context"  : "https://schema.org/extensions",
-        "summary"   : "Jenkins Pipeline Notification",
-        "themeColor": themeColor,
-        "title"     : "Jenkins Pipeline Notification",
-        "text"      : message
-    ]
+      httpRequest(
+                httpMode: 'POST',
+                contentType: 'APPLICATION_JSON',
+                requestBody: groovy.json.JsonOutput.toJson(payload),
+                url: webhookUrl
+            )
+        }
 
-    httpRequest(
-        httpMode: 'POST',
-        contentType: 'APPLICATION_JSON',
-        requestBody: groovy.json.JsonOutput.toJson(payload),
-        url: webhookUrl
-    )
+        // Expose closure to global scope of the pipeline script
+        // so it can be used from all 'script' blocks
+        this.sendTeamsNotification = sendTeamsNotification
+    }
 }
