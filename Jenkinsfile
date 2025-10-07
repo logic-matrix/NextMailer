@@ -66,10 +66,8 @@ pipeline {
         sh 'docker compose up -d'
         }
       }
-    }
-    
   }
-
+    
   post {
     always {
      script {
@@ -77,13 +75,8 @@ pipeline {
 
             // Delete sensitive .env file explicitly
             sh 'rm -f .env || true'
-    
             // Delete subfolder if defined
-            if (env.REPO_NAME) {
-              dir("${env.REPO_NAME}") {
-                deleteDir()
-              }
-            }
+            deleteDir()
           }
         }
     success {
@@ -93,3 +86,4 @@ pipeline {
       echo 'Build failed.'
         }
     }
+  }
