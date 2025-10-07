@@ -1,8 +1,22 @@
 
 def LISTEN_BRANCH      = 'feature/test-pipeline'                   // only build when webhook branch == this
 def WEBHOOK_TOKEN_ID   = 'nextmailer-generic-webhook-token-id'     // Secret Text credential ID
-def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                    // ID of the file credential for .env
-def DOMAIN = 'nextmailer.logicmatrix.us'
+def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID of the file credential for .env
+def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
+def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
+
+def sendTeamsNotification(String message, String webhookUrl) {
+    def payload = """
+    {
+      "text": "${message}"
+    }
+    """
+    httpRequest httpMode: 'POST',
+                contentType: 'APPLICATION_JSON',
+                requestBody: payload,
+                url: webhookUrl
+}
+
 pipeline {
     agent any
     options {
@@ -95,9 +109,19 @@ pipeline {
         }
     success {
       echo 'Deployed successfully.'
+        script {
+            withCredentials([string(credentialsId: TEAMS_WEBHOOK_CREDID, variable: 'TEAMS_WEBHOOK_URL')]) {
+                sendTeamsNotification("✅ Pipeline SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployed successfully. <${env.BUILD_URL}|Open>", TEAMS_WEBHOOK_URL)
+            }
+          }
         }
     failure {
       echo 'Build failed.'
+      script {
+            withCredentials([string(credentialsId: TEAMS_WEBHOOK_CREDID, variable: 'TEAMS_WEBHOOK_URL')]) {
+                sendTeamsNotification("❌ Pipeline FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployment failed. <${env.BUILD_URL}|Open>", TEAMS_WEBHOOK_URL)
+            }    
+          }
         }
     }
   }
