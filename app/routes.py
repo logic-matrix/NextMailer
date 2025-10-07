@@ -453,3 +453,119 @@ def upload():
 
     image = Uploads.query.all()
     return render_template("uploads.html", images=image)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################################
+@main.route('/demo', methods=["POST"])
+def send_email01():
+    try:
+        # Get form data
+        configure_mail(current_app)
+        name = request.form.get('name')
+        sender_email = request.form.get('email')
+        message_content = request.form.get('message')
+
+        if not name or not sender_email or not message_content:
+            return jsonify({"status": "error", "message": "All fields are required."})
+
+        # Prepare email
+        msg = Message(
+            subject=f"NextMailer - {name}",
+            recipients=["contact@logicmatrix.tech"]
+        )
+
+        # HTML Template
+        msg.html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Contact Form Submission</title>
+        </head>
+        <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f6f9;">
+            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                style="max-width:600px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.08);">
+
+                <!-- Header -->
+                <tr>
+                    <td align="center" bgcolor="#1e3c72" style="padding: 30px 20px; color:#ffffff;">
+                        <h1 style="margin:0; font-size:24px;">New Message from NextMailer</h1>
+                        <p style="margin:5px 0 0; font-size:14px; opacity:0.9;">NextMailer Contact Submission</p>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:30px 20px; color:#333333; font-size:15px; line-height:1.6;">
+                        <p><strong>Name:</strong> {name}</p>
+                        <p><strong>Email:</strong> {sender_email}</p>
+                        <p><strong>Message:</strong></p>
+                        <p style="background:#f4f6f9; padding:10px; border-radius:5px;">{message_content}</p>
+                        <hr style="margin:20px 0; border:none; border-top:1px solid #eee;">
+                        <p>This message was sent via the NextMailer contact form.</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td bgcolor="#f4f6f9" style="padding:20px; text-align:center; font-size:12px; color:#777;">
+                        © 2025 NextMailer | Powered by LogicMatrix
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+
+        # ✅ Send the email safely
+        mail.send(msg)
+
+        flash("Email sent successfully!", "success")
+        return redirect(url_for("main.landing"))
+
+    except Exception as e:
+        print("Error sending email:", e)
+        return jsonify({"status": "error", "message": str(e)})
+
+
+ 
