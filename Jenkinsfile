@@ -5,10 +5,13 @@ def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID o
 def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
 def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
 
-def sendTeamsNotification = { String message, String webhookUrl, String themeColor = '0076D7' ->
+def sendTeamsNotification = { String status, String job, String link, String webhookUrl ->
     def payload = [
         'title'     : 'Jenkins Pipeline Notification',
-        'text'      : message
+        'status'      : status,
+        'job'      : job,
+        'link'      : link,
+
     ]
 
     httpRequest(
@@ -56,8 +59,8 @@ pipeline {
     stage('Notify Start') {
         steps {
             script {
-              def message = "🚀 Pipeline STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' started."
-              sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
+              def message = "🚀 Pipeline STARTED"
+              sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.TEAMS_WEBHOOK_URL)
             }
         }
     }
@@ -120,15 +123,15 @@ pipeline {
       echo 'Deployed successfully.'
         script {
             echo 'Deployed successfully.'
-            def message = "✅ Pipeline SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' completed successfully. [Open Pipeline](${env.BUILD_URL})"
-            sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, '00FF00') // Green
+            def message = "✅ SUCCESS"
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.TEAMS_WEBHOOK_URL)
         }
     }
     failure {
       script {
             echo 'Build failed.'
-            def message = "❌ Pipeline FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed. [Open Pipeline](${env.BUILD_URL})"
-            sendTeamsNotification(message, env.TEAMS_WEBHOOK_URL, 'FF0000') // Red
+            def message = "❌ FAILED"
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.TEAMS_WEBHOOK_URL)
       }
     }
   }
