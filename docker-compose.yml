@@ -38,4 +38,6 @@ services:
       
 volumes:
   nextmailer_test_appinstance:
+    external: true
   nextmailer_test_migrationdata:
+    external: true
