@@ -97,7 +97,6 @@ pipeline {
       steps {
         script {
             sh '''
-              docker compose run --rm web flask db init 
               docker compose run --rm web flask db migrate
               docker compose run --rm web flask db upgrade
             '''
