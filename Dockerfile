@@ -20,4 +20,4 @@ ENV FLASK_ENV=production \
 EXPOSE 8000
 
 # Default command (can be overridden by compose)
-CMD ["python", "-m", "flask", "--app", "run", "--host=0.0.0.0", "--port=8000"]
+CMD ["gunicorn", "-w", "3", "-b", "0.0.0.0:8000", "run:app"]

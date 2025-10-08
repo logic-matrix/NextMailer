@@ -17,25 +17,25 @@ services:
       - .env
     # Persist SQLite DB 
     volumes:
-      - app_instance:/app/app/instance
-      - ./migrations:/app/migrations
+      - nextmailer_test_appinstance:/app/app/instance
+      - nextmailer_test_migrationdata:/app/migrations
     networks:
       - traefik-proxy-net
-
-    ports:
-      - "8030:8000"
+    # ports:
+    #   - "8030:8000"
     # Choose ONE command:
     # (A) Gunicorn (recommended for prod) — requires your run.py to expose `app`
-    # command: gunicorn -w 3 -b 0.0.0.0:8000 run:app
+    command: gunicorn -w 3 -b 0.0.0.0:8000 run:app
     #
     # (B) Flask dev server (simple/dev) — works even if you don’t expose `app`
-    command: sh -c "python -m flask --app run run --host=0.0.0.0 --port=8000"
+    # command: sh -c "python -m flask --app run run --host=0.0.0.0 --port=8000"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nextmailer.rule=Host(`nextmailer.logicmatrix.us`)"
+      - "traefik.http.routers.nextmailer.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.nextmailer.entrypoints=web"
       - "traefik.http.services.nextmailer.loadbalancer.server.port=8000"
       
 volumes:
-  app_instance:
+  nextmailer_test_appinstance:
+  nextmailer_test_migrationdata:
