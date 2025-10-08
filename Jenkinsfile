@@ -5,13 +5,14 @@ def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID o
 def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
 def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
 
-def sendTeamsNotification = { String status, String job, String build, String link, String webhookUrl ->
+def sendTeamsNotification = { String status, String job, String build, String link, String branch, String webhookUrl ->
     def payload = [
         'title'     : 'NextMailer Pipeline Notification',
         'status'    : status,
         'job'       : job,
         'build'     : build,
         'link'      : link,
+        'branch'    : branch
 
     ]
     def jsonPayload = groovy.json.JsonOutput.toJson(payload)
@@ -62,7 +63,7 @@ pipeline {
         steps {
             script {
               def message = "🚀 Pipeline STARTED"
-              sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, env.TEAMS_WEBHOOK_URL)
+              sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
             }
         }
     }
@@ -126,14 +127,14 @@ pipeline {
         script {
             echo 'Deployed successfully.'
             def message = "✅ SUCCESS"
-            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, env.TEAMS_WEBHOOK_URL)
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
         }
     }
     failure {
       script {
             echo 'Build failed.'
             def message = "❌ FAILED"
-            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, env.TEAMS_WEBHOOK_URL)
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
       }
     }
   }
