@@ -7,18 +7,19 @@ def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret 
 
 def sendTeamsNotification = { String status, String job, String build, String link, String webhookUrl ->
     def payload = [
-        'title'     : 'Jenkins Pipeline Notification',
+        'title'     : 'NextMailer Pipeline Notification',
         'status'    : status,
         'job'       : job,
         'build'     : build,
         'link'      : link,
 
     ]
+    def jsonPayload = groovy.json.JsonOutput.toJson(payload)
 
     httpRequest(
         httpMode: 'POST',
         contentType: 'APPLICATION_JSON',
-        requestBody: groovy.json.JsonOutput.toJson(payload),
+        requestBody: jsonPayload,
         url: webhookUrl
     )
 }
