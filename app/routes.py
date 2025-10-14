@@ -1,6 +1,6 @@
 from io import BytesIO
 import os
-from tkinter import Image
+from PIL import Image
 from dotenv import load_dotenv
 from flask_mail import Mail, Message
 from flask import Blueprint, current_app, flash, jsonify, make_response, redirect, render_template, request, send_file, session, url_for
