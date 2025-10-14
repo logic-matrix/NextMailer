@@ -66,6 +66,7 @@
                     </select>
                 </div>
 
+                
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Image Width (%)</label>
@@ -219,9 +220,14 @@ ${contentInput.value}
 </p>
 <footer style="text-align:center; font-size:14px; color:#555;">${footerText.value}</footer>
 </div>
+
+<!-- Tracking Pixel (unique per user & campaign) -->
+<img src="http://127.0.0.1:5000/load-image/1" width="1" height="1" alt="">
+
 </body>
 </html>
-        `;
+`;
+
             finalHtmlField.value = htmlOutput.trim();
         }
 

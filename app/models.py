@@ -24,7 +24,16 @@ class Campaign(db.Model):
     name = db.Column(db.String(80), nullable=False)
     template = db.Column(db.String(80), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    viewed = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+class CampaignLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
+    status = db.Column(db.String(80), nullable=False)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+    campaign = db.relationship('Campaign', backref=db.backref('logs', lazy=True))
 
 
 class Service(db.Model):
@@ -39,8 +48,10 @@ class Template(db.Model):
     final_html = db.Column(db.String(80), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
+
 class Uploads(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(120), nullable=False)
     filepath = db.Column(db.String(255), nullable=False)
     uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
+    
