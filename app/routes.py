@@ -1,12 +1,14 @@
+from io import BytesIO
 import os
+from tkinter import Image
 from dotenv import load_dotenv
 from flask_mail import Mail, Message
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, make_response, redirect, render_template, request, send_file, session, url_for
 from werkzeug.security import generate_password_hash
 from app.controllers.main_controller import home
 from app.controllers.settings_controller import service_settings
 from app.controllers.upload_image import save_image
-from .models import Customer, Service, Template, Uploads, User
+from .models import Campaign, Customer, Service, Template, Uploads, User
 from .extensions import db, mail
 from werkzeug.security import check_password_hash
 from flask_login import login_required, current_user
@@ -43,10 +45,12 @@ def configure_mail(app):
         MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER
     )
     mail.init_app(app)
+
 #######################################################################
 @main.route("/", methods=["GET", "POST"])
 def landing_page():
     return render_template("landing.html")
+
 
 #######################################################################
 @main.route("/login", methods=["GET", "POST"])
@@ -174,9 +178,17 @@ def users():
 @main.route("/campaigns", methods=["GET", "POST"])
 #@login_required
 def campaigns():
+    camp = Campaign.query.all()
+    return render_template("campaigns.html", campaigns=camp)
+
+##########################################################################
+@main.route("/campaign1", methods=["GET", "POST"])
+#@login_required
+def campaign1():
     services = Service.query.all()
     Templates = Template.query.all()
-    return render_template("campaigns.html", services=services, templates=Templates)
+    return render_template("campaign1.html", services=services, templates=Templates)
+ 
 ###########################################################################
 @main.route("/start_campaign", methods=["GET", "POST"])
 def start_campaign():
@@ -186,6 +198,7 @@ def start_campaign():
     template_name = request.form.get("template")
     schedule = request.form.get("schedule")
 
+    
     #print("Starting campaign with the following details:")
     #print(campaign_name, subject, recipient_list, template_name, schedule)
 
@@ -223,6 +236,15 @@ def start_campaign():
         except Exception as e:
             fail_count += 1
             print(f"Failed to send to {email}: {str(e)}")
+    
+    # Log campaign in DB
+    save_campaign = Campaign(
+        name=campaign_name,
+        template=template_name,
+        content=template.final_html,
+    )
+    db.session.add(save_campaign)
+    db.session.commit()
 
     flash(
         f"Campaign '{campaign_name}' completed. Sent: {success_count}, Failed: {fail_count}",
@@ -254,11 +276,13 @@ def send_email():
         flash(f"Error sending email: {str(e)}", "danger")
 
     return redirect(url_for("main.campaigns"))
+
 ####################################################################################
 @main.route("/sms_campaigns", methods=["GET", "POST"])
 #@login_required
 def sms_campaigns():
     return render_template("sms_campaign.html")
+
 ####################################################################################
 @main.route("/about")
 def about():
@@ -369,11 +393,11 @@ def delete_template(id):
         db.session.delete(template)
         db.session.commit()
         flash("Template deleted successfully!", "success")
-        return redirect(url_for("main.templates_list"))
+        return redirect(url_for('main.templates_list'))
 
     else:
         flash("Template not found!", "error")
-        return redirect(url_for("main.templates_list"))
+        return redirect(url_for('templates_list'))
 
 ####################################################################################
 @main.route("/add_template", methods=["GET", "POST"])
@@ -422,7 +446,7 @@ def external_template():
         return redirect(url_for("main.templates"))  # use url_for for safety
     else:
         return render_template("save_external_template.html")
-#############################################################################
+############################################################################
 @main.route("/ai_templates", methods=["GET", "POST"])
 def ai_templates():
     user_prompt = None
@@ -430,6 +454,8 @@ def ai_templates():
         user_prompt = request.form.get("prompt")
     
     return render_template("template_ai.html", user_prompt=user_prompt)
+
+    
  
 ############################################################################
 @main.route("/forms", methods=["GET"])
@@ -449,10 +475,85 @@ def upload():
         upload = save_image(file, name)
         if upload:
             return f"Uploaded! Path: {upload.filepath}"
-        return redirect("uploads")
+        return redirect(url_for('uploads'))
 
     image = Uploads.query.all()
     return render_template("uploads.html", images=image)
+
+############################################################################
+@main.route("/delete_image/<int:id>", methods=["POST"])
+def delete_image(id):   
+    image = Uploads.query.get(id)
+    if image:
+        # Delete the file from the filesystem
+        if os.path.exists(image.filepath):
+            os.remove(image.filepath)
+
+        # Delete the record from the database
+        db.session.delete(image)
+        db.session.commit()
+        flash("Image deleted successfully!", "success")
+        return redirect(url_for('main.uploads'))
+
+    else:
+        flash("Image not found!", "error")
+        return redirect(url_for("main.uploads"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -530,7 +631,7 @@ def send_email01():
                 <tr>
                     <td align="center" bgcolor="#1e3c72" style="padding: 30px 20px; color:#ffffff;">
                         <h1 style="margin:0; font-size:24px;">New Message from NextMailer</h1>
-                        <p style="margin:5px 0 0; font-size:14px; opacity:0.9;">NextMailer Contact Submission</p>
+                        <p style="margin:5px 0 0; font-size:14px; opacity:0.9;">Chat Bot Contact Submission</p>
                     </td>
                 </tr>
 
@@ -556,16 +657,80 @@ def send_email01():
         </body>
         </html>
         """
-
-         
+ 
         mail.send(msg)
 
         flash("Email sent successfully!", "success")
         return redirect("/")
 
     except Exception as e:
-        print("Error sending email:", e)
+        flash(f"Error sending email: {str(e)}", "danger")
         return jsonify({"status": "error", "message": str(e)})
+#########################################################################################
+@main.route('/campaign/<campaign_name>/track.jpg')
+def track_open(campaign_name):
+    email = request.args.get('email')
+    if not email:
+        return "Missing email", 400
+
+    # Check if this email already opened this campaign
+    existing = Campaign.query.filter_by(
+        campaign_name=campaign_name,
+        email=email
+    ).first()
+
+    if not existing:
+        tracking = Campaign(
+            campaign_name=campaign_name,
+            email=email,
+            unique=True
+        )
+        db.session.add(tracking)
+        db.session.commit()
+
+    # Create 1x1 transparent image as response
+    img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+    img_io = BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+
+    response = make_response(send_file(img_io, mimetype='image/png'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
+########################################################################################
+@main.route('/load-image/<int:id>')
+def load_image(id):
+    """
+    When this route is called:
+    - Serve an image
+    - Count how many times it's loaded
+    - Store that count in the DB
+    """
+    campaign = Campaign.query.get(id)
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+
+    # Increment load count
+    campaign.viewed += 1
+    db.session.commit()
+
+    image_path = os.path.join('static', 'sample.jpg')
+    print(image_path)
+    if not os.path.exists(image_path):
+        return jsonify({"error": "Image not found"}), 404
+
+    return send_file(image_path, mimetype='image/jpg')
 
 
- 
+
+
+########################################################################################
+@main.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html'), 404
+
+
+#######################################################################################
+@main.errorhandler(500)
+def internal_server_error(error):
+    return render_template('500.html'), 500
