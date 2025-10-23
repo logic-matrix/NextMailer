@@ -1,196 +1,141 @@
+
+def LISTEN_BRANCH      = 'main'                   // only build when webhook branch == this
+def WEBHOOK_TOKEN_ID   = 'nextmailer-generic-webhook-token-id'     // Secret Text credential ID
+def ENV_FILE_CREDENTIAL = 'nextmailer-test-env-file-id'                  // ID of the file credential for .env
+def DOMAIN = 'nextmailer.logicmatrix.us'                                // Domain name to use
+def TEAMS_WEBHOOK_CREDID = 'teams-webhook-url-credential-id'  // Jenkins Secret Text credential ID for Teams webhook URL
+
+def sendTeamsNotification = { String status, String job, String build, String link, String branch, String webhookUrl ->
+    def payload = [
+        'title'     : 'NextMailer Pipeline Notification',
+        'status'    : status,
+        'job'       : job,
+        'build'     : build,
+        'link'      : link,
+        'branch'    : branch
+
+    ]
+    def jsonPayload = groovy.json.JsonOutput.toJson(payload)
+
+    httpRequest(
+        httpMode: 'POST',
+        contentType: 'APPLICATION_JSON',
+        requestBody: jsonPayload,
+        url: webhookUrl
+    )
+}
 pipeline {
     agent any
     options {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
     }
-
-  /********************
-   * Environment (mirror params => env so ${VAR} works in sh)
-   ********************/
-  
-  /********************
-   * Parameters
-   ********************/
-  parameters {
-    // Webhook / listening
-    string(name: 'WEBHOOK_TOKEN_ID', defaultValue: 'logicmatrix-api-generic-webhook-token', description: 'Secret Text credential ID for Generic Webhook Trigger')
-    string(name: 'LISTEN_BRANCH', defaultValue: 'dev', description: 'Exact branch name this job should accept (e.g., dev or main)')
-    string(name: 'SCM_URL',           defaultValue: 'https://github.com/logic-matrix/NextMailer.git', description: 'Git repo URL')
-    string(name: 'GIT_CREDENTIALS_ID',defaultValue: 'github-https-creds', description: 'Jenkins credentialsId for Git SSH key')
-    
-    // Labels / notifications
-    string(name: 'ENVIRONMENT',   defaultValue: 'test',         description: 'Environment label used in notifications (e.g., test or prod)')
-    string(name: 'TEAM_CHANNEL', defaultValue: '#logicmatrixdev',  description: 'Slack channel for notifications')
-    // Compose
-    string(name: 'COMPOSE_FILE',  defaultValue: 'docker-compose.yml', description: 'Compose file to use')
-    // Secret credential IDs (configure these in Jenkins > Credentials)
-    string(name: 'SECRET_KEY_ID',      defaultValue: 'flask-secret-key',     description: 'Secret Text: Flask SECRET_KEY')
-    string(name: 'SMTP_USER_ID',       defaultValue: 'smtp-user',            description: 'Username/Password: SMTP user/pass')
-    string(name: 'MAIL_SENDER_NAME',   defaultValue: 'LogicMatrix',          description: 'Default sender display name')
- 
-
-
-  }
   environment {
-    ENVIRONMENT     = "${params.ENVIRONMENT}"
-    TEAM_CHANNEL    = "${params.SLACK_CHANNEL}"
-
-    APP_NAME        = "${params.APP_NAME}"
-    COMPOSE_FILE    = "${params.COMPOSE_FILE}"
-
+    DOMAIN = "${DOMAIN}"
+    TEAMS_WEBHOOK_URL = credentials("${TEAMS_WEBHOOK_CREDID}")
+  }
+  triggers {
+    // Generic Webhook Trigger (requires Generic Webhook Trigger plugin)
+    GenericTrigger(
+      tokenCredentialId: WEBHOOK_TOKEN_ID,
+      // Pull useful bits from common GitHub push payload
+      genericVariables: [
+        // full ref like "refs/heads/dev"
+        [key: 'GH_REF',   value: '$.ref'],
+        // actor display name
+        [key: 'ACTOR',    value: '$.sender.login'],
+        // repository name
+        [key: 'REPO',     value: '$.repository.full_name']
+      ],
+      //  only accept the branch you want
+      regexpFilterText: '$GH_REF',
+      regexpFilterExpression: '^refs/heads/' + java.util.regex.Pattern.quote(LISTEN_BRANCH) + '$',
+      // quiet logs
+      printContributedVariables: false,
+      printPostContent: false,
+      // Optional nicety
+      causeString: 'Generic webhook by $ACTOR on $REPO ($GH_REF)',
+    )
   }
 
-    stages {
-        stage('Configure Triggers') {
-        when { beforeAgent true; expression { true } }
-            steps {
-                script {
-                    def listen = (params.LISTEN_BRANCH ?: '').trim()
-                    if (!listen) error 'LISTEN_BRANCH must be set (e.g., dev or main).'
-                    def quoted = java.util.regex.Pattern.quote(listen)
-                        properties([
-                            pipelineTriggers([
-                            [$class: 'GenericTrigger',
-                                genericVariables: [
-                                [key: 'WEBHOOK_BRANCH', value: '$.push.changes[0].new.name'],
-                                [key: 'ACTOR', value: '$.actor.display_name']
-                                ],
-                                causeString: 'Triggered by $ACTOR on branch $WEBHOOK_BRANCH',
-                                tokenCredentialId: params.WEBHOOK_TOKEN_ID,
-                                printContributedVariables: false,
-                                printPostContent: false,
-                                // Only fire when the pushed branch matches this job's SCM branch
-                                regexpFilterText: '$WEBHOOK_BRANCH',
-                                regexpFilterExpression: '^' + quoted + '$'
-                            ]
-                            ])
-                        ])
-                        echo "Webhook gated to branch: '${listen}'"
-                }
-            }
-        }
-/********************
-* Checkout code
-********************/
-
-    stage('Checkout') {
+  stages {
+    stage('Notify Start') {
         steps {
-            echo "Checking out branch: ${params.LISTEN_BRANCH}"
-             checkout([
-                $class: 'GitSCM',
-                branches: [[name: "*/${params.LISTEN_BRANCH}"]],   // always the listening branch
-                userRemoteConfigs: [[
-                    url: params.SCM_URL, 
-                    credentialsId: params.GIT_CREDENTIALS_ID,
-                    refspec: '+refs/heads/*:refs/remotes/origin/*'
-                ]],
-                doGenerateSubmoduleConfigurations: false,
-                extensions: [
-                    [$class: 'WipeWorkspace'],
-                    [$class: 'CloneOption', shallow: true, depth: 1, noTags: false, reference: '', timeout: 15]
-                ],
-                submoduleCfg: []
-            ])
+            script {
+              def message = "🚀 Pipeline STARTED"
+              sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
+            }
         }
     }
-   
 
-    stage('Create .env (from Jenkins credentials)') {
+    stage('Checkout') {
       steps {
-        dir("${env.REPO_NAME}") {
-          script {
-            // Read secrets safely from Jenkins credentials
-            withCredentials([
-              string(credentialsId: params.SECRET_KEY_ID, variable: 'SECRET_KEY'),
-              usernamePassword(credentialsId: params.SMTP_USER_ID, usernameVariable: 'SMTP_USER', passwordVariable: 'SMTP_PASS')
-            ]) {
-              // Compose auto-loads .env from the working directory.
-              writeFile file: '.env', text: """
-# ===== Generated by Jenkins at ${new Date()} =====
-# Flask settings
-FLASK_APP=app.py
-FLASK_ENV=production
-SECRET_KEY=${SECRET_KEY}
+        echo 'Checking out the repository...'
+        checkout scm
+      }
+    }
 
-# Server
-HOST=0.0.0.0
-PORT=5000
-DEBUG=True
-
-# Email (SMTP)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_SSL=False
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=${SMTP_USER}
-EMAIL_HOST_PASSWORD=${SMTP_PASS}
-MAIL_DEFAULT_SENDER=\\"${params.MAIL_SENDER_NAME}\\"
-
-# App label
-ENVIRONMENT=${ENVIRONMENT}
-"""
-              sh 'chmod 600 .env'
-            }
+    stage('Load .env Securely') {
+      steps {
+        script {
+          withCredentials([file(credentialsId: ENV_FILE_CREDENTIAL, variable: 'ENV_FILE')]) {
+            // Copy .env securely into workspace
+            sh 'cp "$ENV_FILE" .env && chmod 600 .env'
           }
         }
       }
     }
-   stage('Build') {
+    stage('Build') {
       steps {
         dir("${env.REPO_NAME}") {
-          sh '''
-            docker compose -f "${COMPOSE_FILE}" build
-          '''
+          echo 'Building image...'
+          sh 'docker compose build'
         }
       }
     }
-
-        // stage('Test') {
-        //     steps {
-        //         dir("${env.REPO_NAME}") {
-        //           sh '''
-        //             /// scan command
-        //           '''
-        //         }
-        //     }
-        // }
-    stage('Down Container') {
+    stage('DB Migrate & Upgrade') {
       steps {
-        dir("${env.REPO_NAME}") {
-          sh '''
-            # Stop & remove old resources (ignore errors if first run)
-            docker compose -f "${COMPOSE_FILE}" down || true
-            docker compose -f "${COMPOSE_FILE}" rm -f || true
-          '''
+        script {
+            sh '''
+              docker compose run --rm web flask db migrate
+              docker compose run --rm web flask db upgrade
+            '''
         }
       }
     }
-        stage('Deploy Container') {
-            steps {
-                dir("${env.REPO_NAME}") {
-                   sh '''
-                    # Compose auto-loads .env; no need to pass --env-file if .env is in this dir
-                    docker compose -f "${COMPOSE_FILE}" up -d
-                    docker compose -f "${COMPOSE_FILE}" ps
-                   '''
-                }
-            }
-        }
+    stage('Run') {
+      steps {
+        echo 'Running containers...'
+        sh 'docker compose up -d'
+      }
     }
+  }
 
-    post {
-        always {
-            echo "🧹 Cleaning up ${env.REPO_NAME}..."
-            dir("${env.REPO_NAME}") {
-                deleteDir()
-            }
-        }
-        success {
-            echo '✅ App deployed successfully.'
-        }
-        failure {
-            echo '❌ Build failed.'
+  post {
+    always {
+      script {
+            echo 'Cleaning up...'
+
+            // Delete sensitive .env file explicitly
+            sh 'rm -f .env || true'
+            // Delete subfolder if defined
+            deleteDir()
+      }
+    }
+    success {
+      echo 'Deployed successfully.'
+        script {
+            echo 'Deployed successfully.'
+            def message = "✅ SUCCESS"
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
         }
     }
+    failure {
+      script {
+            echo 'Build failed.'
+            def message = "❌ FAILED"
+            sendTeamsNotification(message, env.JOB_NAME, env.BUILD_NUMBER, env.BUILD_URL, LISTEN_BRANCH, env.TEAMS_WEBHOOK_URL)
+      }
+    }
+  }
 }
