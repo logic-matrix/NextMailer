@@ -6,7 +6,7 @@ Flask-WTF==1.2.1
 gunicorn==23.0.0
 jinja2  # for deployment
 psycopg-binary
-psycopg2-binary==2.9.7
+psycopg2-binary
 flask-sqlalchemy
 python-dotenv
 flask-login
